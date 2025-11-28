@@ -119,7 +119,7 @@ export default function SellProduct() {
       <div className="w-full max-w-4xl bg-white p-8 rounded-xl shadow">
 
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          Sell Products (Cart Mode)
+          Sell Products
         </h2>
 
         {message && (
@@ -175,13 +175,15 @@ export default function SellProduct() {
         </div>
 
         {/* Sell All Button */}
-        <button
-          onClick={sellAll}
-          disabled={loading}
-          className="mt-8 w-full bg-blue-600 text-white py-3 text-lg rounded-lg hover:bg-blue-700 active:scale-95 transition"
-        >
-          {loading ? "Processing..." : "Sell All Selected Products"}
-        </button>
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t flex justify-center z-50">
+          <button
+            onClick={sellAll}
+            disabled={loading}
+            className="w-full max-w-4xl bg-blue-600 text-white py-3 text-lg rounded-lg hover:bg-blue-700 active:scale-95 transition"
+          >
+            {loading ? "Processing..." : "Sell All Selected Products"}
+          </button>
+        </div>
 
         {/* ---------------------- */}
         {/* PRINT TEMPLATE SECTION */}
