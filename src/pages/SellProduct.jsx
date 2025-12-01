@@ -174,7 +174,7 @@ export default function SellProduct() {
         </div>
 
         {/* Sell All Button */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t flex justify-center z-50">
+        {/* <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t flex justify-center z-50">
           <button
             onClick={sellAll}
             disabled={loading}
@@ -182,7 +182,126 @@ export default function SellProduct() {
           >
             {loading ? "Processing..." : "Sell All Selected Products"}
           </button>
-        </div>
+        </div> */}
+
+        
+          {/* Arrow animation keyframes */}
+<style>
+{`
+@keyframes arrowMove {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+  100% { transform: translateX(0); }
+}
+`}
+</style>
+
+<div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t flex justify-center z-50">
+
+  <div
+    id="swipeTrack"
+    className="w-full max-w-4xl h-14 bg-gray-800 rounded-full relative overflow-hidden select-none transition-all duration-300 hover:shadow-[0_0_12px_rgba(255,255,255,0.4)]"
+  >
+    {/* Center Text */}
+    <div
+      id="swipeText"
+      className="absolute inset-0 flex items-center justify-center text-md text-white pointer-events-none transition-opacity duration-300"
+      style={{ paddingLeft: "55px" }}
+    >
+      Sell All Selected Products
+    </div>
+
+    {/* Glow while dragging */}
+    <div
+      id="dragGlow"
+      className="absolute inset-0 bg-blue-500 opacity-0 transition-opacity duration-300 pointer-events-none"
+      style={{ filter: "blur(25px)" }}
+    ></div>
+
+    {/* Swipe Button */}
+    <div
+      id="swipeBtn"
+      className="absolute top-[3px] left-[3px] h-[50px] w-[50px] rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-transform duration-150 active:scale-90"
+      style={{
+        background: "linear-gradient(135deg, #2563eb, #1e40af)",
+        animation: "arrowMove 1s ease-in-out infinite",
+      }}
+      onTouchStart={(e) => {
+        window.dragging = true;
+        window.startX = e.touches[0].clientX - e.target.offsetLeft;
+
+        // Stop arrow animation while dragging
+        e.target.style.animation = "none";
+
+        // Hide text + show glow
+        document.getElementById("swipeText").style.opacity = 0;
+        document.getElementById("dragGlow").style.opacity = 0.4;
+      }}
+      onTouchMove={(e) => {
+        if (!window.dragging) return;
+
+        const track = document.getElementById("swipeTrack");
+        const btn = document.getElementById("swipeBtn");
+
+        let x = e.touches[0].clientX - window.startX;
+        const maxX = track.offsetWidth - btn.offsetWidth - 6;
+
+        if (x < 3) x = 3;
+        if (x > maxX) x = maxX;
+
+        btn.style.left = x + "px";
+      }}
+      onTouchEnd={() => {
+        window.dragging = false;
+
+        const track = document.getElementById("swipeTrack");
+        const btn = document.getElementById("swipeBtn");
+        const text = document.getElementById("swipeText");
+        const glow = document.getElementById("dragGlow");
+
+        const maxX = track.offsetWidth - btn.offsetWidth - 6;
+
+        if (parseInt(btn.style.left) >= maxX * 0.9) {
+          btn.style.left = maxX + "px";
+
+          // Hide glow
+          glow.style.opacity = 0;
+
+          // Success pulse animation
+          btn.style.transition = "transform 0.3s ease";
+          btn.style.transform = "scale(1.15)";
+          setTimeout(() => {
+            btn.style.transform = "scale(1)";
+          }, 300);
+
+          // Call your function
+          sellAll();
+
+        } else {
+          // Cancelled → Reset everything
+          glow.style.opacity = 0;
+
+          // Restart arrow animation
+          btn.style.animation = "arrowMove 1s ease-in-out infinite";
+
+          // Text comes back
+          text.style.opacity = 1;
+
+          // Button resets
+          btn.style.left = "3px";
+        }
+      }}
+    >
+      ➤
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
 
         {/* ---------------------- */}
         {/* PRINT TEMPLATE SECTION */}
