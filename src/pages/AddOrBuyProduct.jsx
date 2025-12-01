@@ -16,15 +16,15 @@ export default function AddOrBuyProduct() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [usercode, setUsercode] = useState("");
+  const [uc, setUc] = useState("");
   const [searchParams] = useSearchParams();
   const userRef = React.useRef("");
 
   useEffect(() => {
-    const code = searchParams.get("usercode"); 
+    const code = searchParams.get("uc"); 
     console.log("USERCODE FROM URL =", code);
 
-    setUsercode(code);
+    setUc(code);
     userRef.current = code;
   }, []);
 
@@ -55,7 +55,7 @@ export default function AddOrBuyProduct() {
       if (mode === "add") {
         fd.append("name", name);
         fd.append("quantity", quantity);
-        fd.append("usercode", usercode);
+        fd.append("uc", uc);
         if (picture) fd.append("picture", picture);
 
         await axios.post(`${BASE_URL}/products/create`, fd);
@@ -76,7 +76,7 @@ export default function AddOrBuyProduct() {
         }
         fd.append("quantity", quantity);
         fd.append("action", "buy");
-        fd.append("usercode", usercode);
+        fd.append("uc", uc);
 
         await axios.post(`${BASE_URL}/products/update/${productId}`, fd);
 

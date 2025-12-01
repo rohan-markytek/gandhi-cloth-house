@@ -10,7 +10,7 @@ export default function SellProduct() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [printData, setPrintData] = useState({}); // for printing
-  const [usercode, setUsercode] = useState("");
+  const [uc, setUc] = useState("");
   const [searchParams] = useSearchParams();
   const userRef = React.useRef("");
 
@@ -29,9 +29,9 @@ export default function SellProduct() {
   }, []);
 
   useEffect(() => {
-    const code = searchParams.get("usercode"); 
+    const code = searchParams.get("uc"); 
     console.log("USERCODE FROM URL =", code);
-    setUsercode(code);
+    setUc(code);
     userRef.current = code;
   }, []);
 
@@ -89,7 +89,7 @@ export default function SellProduct() {
         const fd = new FormData();
         fd.append("quantity", qty);
         fd.append("action", "sell");
-        fd.append("usercode", usercode);
+        fd.append("uc", uc);
 
         await axios.post(`${BASE_URL}/products/update/${id}`, fd);
       }
@@ -178,7 +178,7 @@ export default function SellProduct() {
           <button
             onClick={sellAll}
             disabled={loading}
-            className="w-full max-w-4xl bg-green-600 text-white py-3 text-lg rounded-lg hover:bg-blue-700 active:scale-95 transition"
+            className="w-full max-w-4xl bg-green-600 text-white py-3 text-lg rounded-lg hover:bg-green-700 active:scale-95 transition"
           >
             {loading ? "Processing..." : "Sell All Selected Products"}
           </button>

@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 export default function Home() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const user = searchParams.get("usercode");
+  const user = searchParams.get("uc");
 
   const menu = [
     { title: "Add Product", icon: "📦", route: "/add" },
@@ -25,7 +25,7 @@ export default function Home() {
         {menu.map((item, index) => (
           <div
             key={index}
-            onClick={() => navigate(`${item.route}?usercode=${user}`)}
+            onClick={() => navigate(`${item.route}?uc=${user}`)}
             className="bg-blue-50 border border-blue-200 rounded-xl shadow-sm 
                        p-6 flex items-center gap-4 cursor-pointer
                        transition hover:shadow-md hover:bg-blue-100 active:scale-95"
