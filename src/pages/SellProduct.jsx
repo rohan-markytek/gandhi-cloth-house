@@ -185,7 +185,19 @@ export default function SellProduct() {
           </button>
         </div> */}
 
-        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t flex justify-center z-50">
+        
+          {/* Arrow animation keyframes */}
+<style>
+{`
+@keyframes arrowMove {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+  100% { transform: translateX(0); }
+}
+`}
+</style>
+
+<div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t flex justify-center z-50">
 
   <div
     id="swipeTrack"
@@ -210,13 +222,17 @@ export default function SellProduct() {
     {/* Swipe Button */}
     <div
       id="swipeBtn"
-      className="absolute top-[3px] left-[3px] h-[50px] w-[50px] rounded-full flex items-center justify-center text-white text-2xl font-bold transition-transform duration-150 active:scale-90 shadow-lg"
+      className="absolute top-[3px] left-[3px] h-[50px] w-[50px] rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-transform duration-150 active:scale-90"
       style={{
         background: "linear-gradient(135deg, #2563eb, #1e40af)",
+        animation: "arrowMove 1s ease-in-out infinite",
       }}
       onTouchStart={(e) => {
         window.dragging = true;
         window.startX = e.touches[0].clientX - e.target.offsetLeft;
+
+        // Stop arrow animation while dragging
+        e.target.style.animation = "none";
 
         // Hide text + show glow
         document.getElementById("swipeText").style.opacity = 0;
@@ -249,23 +265,30 @@ export default function SellProduct() {
         if (parseInt(btn.style.left) >= maxX * 0.9) {
           btn.style.left = maxX + "px";
 
-          // Glow stays hidden
+          // Hide glow
           glow.style.opacity = 0;
 
-          // Button pulse animation
+          // Success pulse animation
           btn.style.transition = "transform 0.3s ease";
           btn.style.transform = "scale(1.15)";
           setTimeout(() => {
             btn.style.transform = "scale(1)";
           }, 300);
 
+          // Call your function
           sellAll();
+
         } else {
-          // Glow disappear
+          // Cancelled → Reset everything
           glow.style.opacity = 0;
 
-          // Reset text + button
+          // Restart arrow animation
+          btn.style.animation = "arrowMove 1s ease-in-out infinite";
+
+          // Text comes back
           text.style.opacity = 1;
+
+          // Button resets
           btn.style.left = "3px";
         }
       }}
