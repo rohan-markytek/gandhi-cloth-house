@@ -7,6 +7,7 @@ import ViewProducts from "./pages/ViewProducts";
 import SellProduct from "./pages/SellProduct";
 import BuyProduct from "./pages/BuyProduct";
 import AddOrBuyProduct from "./pages/AddOrBuyProduct";
+import NotFound from "./pages/NotFound";
 
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/sell" element={<SellProduct />} />
             <Route path="/buy" element={<BuyProduct />} />
             <Route path="/add" element={<AddOrBuyProduct />} />
+            <Route path="/404" element={<NotFound />} />
           </Routes>
         </main>
       <Footer />

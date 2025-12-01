@@ -31,7 +31,6 @@ export default function SellProduct() {
   useEffect(() => {
     const code = searchParams.get("usercode"); 
     console.log("USERCODE FROM URL =", code);
-
     setUsercode(code);
     userRef.current = code;
   }, []);
@@ -179,7 +178,7 @@ export default function SellProduct() {
           <button
             onClick={sellAll}
             disabled={loading}
-            className="w-full max-w-4xl bg-blue-600 text-white py-3 text-lg rounded-lg hover:bg-blue-700 active:scale-95 transition"
+            className="w-full max-w-4xl bg-green-600 text-white py-3 text-lg rounded-lg hover:bg-blue-700 active:scale-95 transition"
           >
             {loading ? "Processing..." : "Sell All Selected Products"}
           </button>
@@ -191,7 +190,7 @@ export default function SellProduct() {
         <div id="print-area" className="print:block hidden p-6 text-black">
           <div className="hidden print:block p-6">
 
-            <h2 className="text-xl font-bold mb-2">Gandhi Cloth House</h2>
+            {/*<h2 className="text-xl font-bold mb-2">Gandhi Cloth House</h2>*/}
             <p className="text-sm mb-4">Sell Receipt</p>
 
             <table className="w-full border-collapse">

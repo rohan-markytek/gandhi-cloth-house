@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect,useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const user = searchParams.get("usercode");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const code = searchParams.get("usercode"); 
+    if (!code || code.trim() === "" || code=='null') {
+      navigate("/404");
+      return;
+    }
+  }, []);
 
   return (
     <header className="w-full bg-white shadow-md py-4 px-6 flex items-center justify-between fixed top-0 left-0 z-50">

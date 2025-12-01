@@ -6,7 +6,7 @@ export default function AddOrBuyProduct() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const [products, setProducts] = useState([]);
-  const [mode, setMode] = useState("add"); // add | buy
+  const [mode, setMode] = useState("buy"); // add | buy
 
   const [productId, setProductId] = useState("");
   const [name, setName] = useState("");
@@ -110,7 +110,7 @@ export default function AddOrBuyProduct() {
 
         {/* Mode Switch */}
         <div className="flex gap-4 mb-6">
-          <button
+          {/*<button
             onClick={() => setMode("add")}
             className={`flex-1 py-2 rounded-lg font-semibold ${
               mode === "add"
@@ -119,9 +119,9 @@ export default function AddOrBuyProduct() {
             }`}
           >
             New Product
-          </button>
+          </button>*/}
 
-          <button
+          {/*<button
             onClick={() => setMode("buy")}
             className={`flex-1 py-2 rounded-lg font-semibold ${
               mode === "buy"
@@ -130,7 +130,7 @@ export default function AddOrBuyProduct() {
             }`}
           >
             Add Stock
-          </button>
+          </button>*/}
         </div>
 
         {/* Form */}
