@@ -13,7 +13,7 @@ import NotFound from "./pages/NotFound";
 export default function App() {
   return (
     <BrowserRouter>
-      <Header />
+      {/* <Header /> */}
         <main className="min-h-[80vh] pb-16">
           <Routes>
             <Route path="/" element={<Home />} />
