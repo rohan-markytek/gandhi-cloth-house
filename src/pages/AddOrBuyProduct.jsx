@@ -40,6 +40,10 @@ export default function AddOrBuyProduct() {
   useEffect(() => {
     loadProducts();
     const code = searchParams.get("uc");
+    if (!code || code.trim() === "" || code=='null') {
+      navigate("/404");
+      return;
+    }
     setUc(code);
   }, [searchParams]);
 
@@ -250,13 +254,13 @@ export default function AddOrBuyProduct() {
           >
             Add Stock
           </button>
-          <button
+          {/*<button
             onClick={() => { setMode("add"); setMessage(""); }}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "add" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"
               }`}
           >
             New Product
-          </button>
+          </button>*/}
         </div>
       </div>
 

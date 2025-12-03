@@ -14,7 +14,16 @@ export default function ViewProducts() {
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
 
   const imageBaseUrl = import.meta.env.VITE_PRODUCT_IMAGE_BASE_URL;
-  const uc = searchParams.get("uc");
+  const [uc, setUc] = useState("");
+
+  useEffect(() => {
+    const code = searchParams.get("uc");
+    if (!code || code.trim() === "" || code=='null') {
+      navigate("/404");
+      return;
+    }
+    setUc(code);
+  }, [searchParams]);
 
   // Load products from API
   const loadProducts = async () => {
@@ -302,7 +311,7 @@ export default function ViewProducts() {
       </div>
 
       {/* Stats Cards */}
-      <div className="p-4 grid grid-cols-3 gap-3">
+      {/*<div className="p-4 grid grid-cols-3 gap-3">
         <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
           <div className="text-2xl font-bold text-gray-900">{totalProducts}</div>
           <div className="text-xs text-gray-500 mt-0.5">Total Products</div>
@@ -315,7 +324,7 @@ export default function ViewProducts() {
           <div className="text-2xl font-bold text-red-500">{outOfStock}</div>
           <div className="text-xs text-gray-500 mt-0.5">Out of Stock</div>
         </div>
-      </div>
+      </div>*/}
 
       {/* Product List/Grid */}
       <div className="px-4 pb-4">

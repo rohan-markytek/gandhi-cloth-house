@@ -14,6 +14,16 @@ export default function SellProduct() {
   const [uc, setUc] = useState("");
   const [searchParams] = useSearchParams();
 
+
+  useEffect(() => {
+    const code = searchParams.get("uc");
+    if (!code || code.trim() === "" || code=='null') {
+      navigate("/404");
+      return;
+    }
+    setUc(code);
+  }, [searchParams]);
+
   // UI States
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all' or 'selected'

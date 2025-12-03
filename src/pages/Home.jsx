@@ -1,10 +1,20 @@
-import React from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const user = searchParams.get("uc");
+  const [uc, setUc] = useState("");
+
+  useEffect(() => {
+      const code = searchParams.get("uc");
+      if (!code || code.trim() === "" || code=='null') {
+        navigate("/404");
+        return;
+      }
+      setUc(code);
+    }, [searchParams]);
 
   const menu = [
     {
