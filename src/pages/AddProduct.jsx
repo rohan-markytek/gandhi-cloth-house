@@ -9,17 +9,17 @@ export default function AddProduct() {
   const [quantity, setQuantity] = useState(0);
   const [picture, setPicture] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [usercode, setUsercode] = useState("");
+  const [uc, setUc] = useState("");
   const [msg, setMsg] = useState("");
 
   const [searchParams] = useSearchParams();
   const userRef = React.useRef("");
 
   useEffect(() => {
-    const code = searchParams.get("usercode"); 
+    const code = searchParams.get("uc"); 
     console.log("USERCODE FROM URL =", code);
 
-    setUsercode(code);
+    setUc(code);
     userRef.current = code;
   }, []);
 
@@ -34,7 +34,7 @@ export default function AddProduct() {
       const fd = new FormData();
       fd.append("name", name);
       fd.append("quantity", quantity);
-      fd.append("usercode", '1');
+      fd.append("uc", '1');
       if (picture) fd.append("picture", picture);
 
       console.log("SENDING:", userRef.current);
@@ -72,7 +72,7 @@ export default function AddProduct() {
 
         {/* DEBUG — REMOVE LATER */}
         <div className="mb-4 text-sm text-red-600">
-          <b>Debug user:</b> {usercode}
+          <b>Debug user:</b> {uc}
         </div>
 
         {msg && (
