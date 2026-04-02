@@ -30,6 +30,9 @@ export default function SellProduct() {
   const [activeTab, setActiveTab] = useState("all"); // 'all' or 'selected'
   const [viewMode, setViewMode] = useState("grid"); // 'list' or 'grid'
   const [sortBy, setSortBy] = useState("az"); // 'az' | 'highToLow' | 'lowToHigh'
+  const PAGE_SIZE = 10;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loadMoreRef = useRef(null);
 
   // Load all products
   const loadProducts = async () => {
@@ -102,6 +105,46 @@ export default function SellProduct() {
 
     return data;
   }, [products, searchTerm, activeTab, sellItems, sortBy]);
+
+  const visibleProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
+  const hasMoreProducts = visibleCount < filteredProducts.length;
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, activeTab, sortBy, viewMode]);
+
+  useEffect(() => {
+    if (!hasMoreProducts) return;
+
+    const currentTarget = loadMoreRef.current;
+    if (!currentTarget) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredProducts.length));
+        }
+      },
+      {
+        root: null,
+        rootMargin: "220px",
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(currentTarget);
+
+    return () => observer.disconnect();
+  }, [filteredProducts.length, hasMoreProducts]);
+
+  const getThumbUrl = (picturePath) => {
+    if (!picturePath) return "";
+    const separator = picturePath.includes("?") ? "&" : "?";
+    return `${imageBaseUrl}${picturePath}${separator}w=140&h=140&fit=cover`;
+  };
 
   const totalSelectedItems = Object.keys(sellItems).length;
   const totalSelectedQty = Object.values(sellItems).reduce((a, b) => a + b, 0);
@@ -326,7 +369,7 @@ export default function SellProduct() {
           </div>
         ) : (
           <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
-            {filteredProducts.map((p) => {
+            {visibleProducts.map((p) => {
               const qty = sellItems[p.id] || 0;
               const isSelected = qty > 0;
               const isNearMax = qty >= p.quantity * 0.8;
@@ -345,16 +388,20 @@ export default function SellProduct() {
                     <div className="p-3">
                       <div className="flex items-center gap-3 mb-2">
                         {/* Image */}
-                        <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
+                        <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
                           {p.picture ? (
                             <img
-                              src={`${imageBaseUrl}${p.picture}`}
+                              src={getThumbUrl(p.picture)}
                               alt={p.name}
                               className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                              width="48"
+                              height="48"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">
-                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                             </div>
@@ -483,16 +530,20 @@ export default function SellProduct() {
                   `}
                 >
                   {/* Image */}
-                  <div className="aspect-square w-full overflow-hidden bg-gray-200">
+                  <div className="h-28 w-full overflow-hidden bg-gray-200">
                     {p.picture ? (
                       <img
-                        src={`${imageBaseUrl}${p.picture}`}
+                        src={getThumbUrl(p.picture)}
                         alt={p.name}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                        width="140"
+                        height="140"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
@@ -606,6 +657,18 @@ export default function SellProduct() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {hasMoreProducts && (
+          <div ref={loadMoreRef} className="py-4 text-center text-sm text-gray-500">
+            Loading more products...
+          </div>
+        )}
+
+        {!hasMoreProducts && filteredProducts.length > PAGE_SIZE && (
+          <div className="py-3 text-center text-xs text-gray-400">
+            All products loaded
           </div>
         )}
       </div>
