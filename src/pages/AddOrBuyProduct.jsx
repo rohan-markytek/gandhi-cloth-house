@@ -19,7 +19,8 @@ export default function AddOrBuyProduct() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [addStockQty, setAddStockQty] = useState("");
-  const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
+  const [viewMode, setViewMode] = useState("grid"); // 'list' or 'grid'
+  const [sortBy, setSortBy] = useState("az"); // 'az' | 'highToLow' | 'lowToHigh'
 
   // Add Mode State
   const [newName, setNewName] = useState("");
@@ -49,10 +50,17 @@ export default function AddOrBuyProduct() {
 
   // Filter Products for Buy Mode
   const filteredProducts = useMemo(() => {
-    if (!searchTerm) return products;
     const lower = searchTerm.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(lower));
-  }, [products, searchTerm]);
+    const result = products.filter((p) => p.name.toLowerCase().includes(lower));
+
+    result.sort((a, b) => {
+      if (sortBy === "highToLow") return (b.quantity || 0) - (a.quantity || 0);
+      if (sortBy === "lowToHigh") return (a.quantity || 0) - (b.quantity || 0);
+      return a.name.localeCompare(b.name);
+    });
+
+    return result;
+  }, [products, searchTerm, sortBy]);
 
   const selectedProduct = useMemo(() =>
     products.find(p => p.id === selectedProductId),
@@ -247,13 +255,13 @@ export default function AddOrBuyProduct() {
 
         {/* Tabs */}
         <div className="flex p-1 bg-gray-100 rounded-xl">
-          <button
+          {/*<button
             onClick={() => { setMode("buy"); setMessage(""); setSelectedProductId(null); }}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "buy" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"
               }`}
           >
             Add Stock
-          </button>
+          </button>*/}
           {/*<button
             onClick={() => { setMode("add"); setMessage(""); }}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "add" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"
@@ -261,6 +269,43 @@ export default function AddOrBuyProduct() {
           >
             New Product
           </button>*/}
+          {/* Search Bar */}
+          <div className="flex items-center gap-2 w-full">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+                placeholder="Search product to add stock..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="py-2 px-3 border border-gray-200 rounded-xl bg-gray-100 text-sm text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500"
+              aria-label="Sort products"
+            >
+              <option value="az">A-Z</option>
+              <option value="highToLow">High to Low</option>
+              <option value="lowToHigh">Low to High</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -280,31 +325,6 @@ export default function AddOrBuyProduct() {
             {/* 1. Select Product */}
             {!selectedProduct ? (
               <div className="space-y-4">
-                {/* Search Bar */}
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    className="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out"
-                    placeholder="Search product to add stock..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm("")}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                      <svg className="h-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
 
                 {/* Product List/Grid */}
                 {filteredProducts.length === 0 ? (
