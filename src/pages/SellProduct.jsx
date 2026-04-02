@@ -9,6 +9,7 @@ export default function SellProduct() {
   const [products, setProducts] = useState([]);
   const [sellItems, setSellItems] = useState({});
   const [message, setMessage] = useState("");
+  const [challanNumber, setChallanNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [printData, setPrintData] = useState({});
   const [uc, setUc] = useState("");
@@ -109,12 +110,16 @@ export default function SellProduct() {
     setMessage("");
 
     try {
+      const res = await axios.post(`${BASE_URL}/products/challanNo`);
+      const challanNo = res.data.challan_no;
+      setChallanNumber(challanNo);
       for (const id in sellItems) {
         const qty = sellItems[id];
         const fd = new FormData();
         fd.append("quantity", qty);
         fd.append("action", "sell");
         fd.append("uc", uc);
+        fd.append("challan_no", challanNo);
 
         await axios.post(`${BASE_URL}/products/update/${id}`, fd);
       }
@@ -174,6 +179,10 @@ export default function SellProduct() {
       setDragX(0);
     }
   };
+
+  const totalSoldQty = useMemo(() => {
+    return Object.values(printData).reduce((sum, qty) => sum + qty, 0);
+  }, [printData]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-40">
@@ -706,31 +715,132 @@ export default function SellProduct() {
       </div>
 
       {/* Print Area */}
-      <div id="print-area" className="hidden print:block">
-        <div className="p-8">
-          <h2 className="text-2xl font-bold mb-4">Sell Receipt</h2>
-          <table className="w-full border-collapse text-left">
+      <div
+        id="print-area"
+        className="hidden print:block text-[14px] print:text-[16px] leading-tight m-0 p-0"
+      >
+        <div>
+
+          {/* Header */}
+          <div className="text-center">
+            <p className="font-bold text-[16px] print:text-[18px] border-b border-dashed border-black pb-2">
+              Shree Ganeshay Namah
+            </p>
+
+            <p className="font-bold text-[18px] print:text-[20px] pt-1">
+              CLOTH STORE (G)
+            </p>
+
+            <p className="border-b border-dashed border-black pb-1 pt-1 text-[11px] print:text-[13px]">
+              [ ] Original For Receipient &nbsp;&nbsp; [ ] Duplicate For Transporter &nbsp;&nbsp; [ ] Triplicate For Supplier
+            </p>
+
+            <p className="font-bold text-[18px] print:text-[20px] pt-1">
+              PACKING SLIP ONLY
+            </p>
+          </div>
+
+          {/* Customer + Bill Info */}
+          <div className="flex justify-between mt-1">
+            <div className="text-[14px] print:text-[16px]">
+              <p>
+                CHALLAN NO.: <b>{ challanNumber }</b>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-[auto_1fr] gap-x-2 text-right text-[14px] print:text-[16px]">
+              <span>DATE:</span>
+              <b>{new Date().toLocaleDateString('en-IN')}</b>
+
+              <span>TIME:</span>
+              <b>
+                {new Date().toLocaleTimeString('en-IN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </b>
+            </div>
+          </div>
+
+          {/* Table */}
+          <table className="w-full mt-2 border-t border-dashed border-black">
             <thead>
-              <tr className="border-b-2 border-gray-800">
-                <th className="py-2">Product</th>
-                <th className="py-2 text-right">Qty</th>
+              <tr className="border-b border-dashed border-black">
+                <th className="text-left py-1 text-[15px] print:text-[17px] font-semibold">
+                  HSN / Description
+                </th>
+                <th className="text-right py-1 text-[15px] print:text-[17px] font-semibold">
+                  Pcs
+                </th>
+                <th>
+
+                </th>
               </tr>
             </thead>
+
             <tbody>
               {Object.keys(printData).map((id) => {
                 const product = products.find((x) => x.id == id);
                 return (
-                  <tr key={id} className="border-b border-gray-200">
-                    <td className="py-2">{product?.name}</td>
-                    <td className="py-2 text-right">{printData[id]}</td>
+                  <tr key={id} className="border-b border-dashed border-gray-300">
+                    <td className="py-1 text-[14px] print:text-[16px]">
+                      {product?.name}
+                    </td>
+                    <td className="py-1 text-right text-[14px] print:text-[16px]">
+                      {printData[id]}
+                    </td>
+                    <td className="py-1 text-center text-[14px] print:text-[16px]">
+                      <span className="inline-block w-7 h-4 border border-black rounded-sm"></span>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
+            <tr className="border-b border-dashed border-black">
+                <th className="text-center py-1 text-[15px] print:text-[17px] font-bold">
+                  Net Total.....
+                </th>
+                <th className="text-right py-1 text-[15px] print:text-[17px] font-bold">
+                  {totalSoldQty}
+                </th>
+                <th>
+                  <span className="inline-block w-7 h-4 border border-black rounded-sm"></span>
+                </th>
+              </tr>
           </table>
-          <p className="mt-8 text-sm text-gray-500">Date: {new Date().toLocaleString()}</p>
+          
+          {/* Footer Row: Thanks (Left) + Signature (Right) */}
+          {/*<div className="mt-6 flex justify-between items-end">
+            <p className="text-[12px] print:text-[14px] font-semibold">
+              !!! Thanks !!! Visit Again !!!
+            </p>
+
+            <div className="w-56 text-right">
+              <div className="border-t border-dashed border-black text-center text-[14px] print:text-[16px]">
+                Signature
+              </div>
+            </div>
+          </div>*/}
+
+          <p className="text-left mt-5 text-[12px] print:text-[14px] font-semibold print:break-inside-avoid">
+            !!! Thanks !!! Visit Again !!!
+          </p>
+
+          {/* Signature */}
+          <div className="mt-2 flex justify-end">
+            <div className="w-56 text-right">
+              <div className="border-t border-dashed border-black pt-2 text-center text-[14px] print:text-[16px]">
+                Signature
+              </div>
+            </div>
+          </div>
+
+          
+
         </div>
       </div>
+
 
     </div>
   );
