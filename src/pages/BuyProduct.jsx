@@ -39,6 +39,8 @@ export default function BuyProduct() {
       const fd = new FormData();
       fd.append("quantity", quantity);
       fd.append("action", "buy");
+      fd.append("uc", uc);
+      fd.append("challan_no", '');
 
       await axios.post(`${BASE_URL}/products/update/${productId}`, fd);
 

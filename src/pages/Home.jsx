@@ -37,7 +37,7 @@ export default function Home() {
       route: "/sell",
       color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100",
     },
-    {
+    /*{
       title: "View Products",
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +46,7 @@ export default function Home() {
       ),
       route: "/products",
       color: "bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100",
-    },
+    },*/
   ];
 
   return (

@@ -9,6 +9,7 @@ export default function SellProduct() {
   const [products, setProducts] = useState([]);
   const [sellItems, setSellItems] = useState({});
   const [message, setMessage] = useState("");
+  const [challanNumber, setChallanNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [printData, setPrintData] = useState({});
   const [uc, setUc] = useState("");
@@ -27,7 +28,11 @@ export default function SellProduct() {
   // UI States
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all' or 'selected'
-  const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
+  const [viewMode, setViewMode] = useState("grid"); // 'list' or 'grid'
+  const [sortBy, setSortBy] = useState("az"); // 'az' | 'highToLow' | 'lowToHigh'
+  const PAGE_SIZE = 10;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loadMoreRef = useRef(null);
 
   // Load all products
   const loadProducts = async () => {
@@ -92,8 +97,54 @@ export default function SellProduct() {
       data = data.filter(p => sellItems[p.id] > 0);
     }
 
+    data = [...data].sort((a, b) => {
+      if (sortBy === "highToLow") return (b.quantity || 0) - (a.quantity || 0);
+      if (sortBy === "lowToHigh") return (a.quantity || 0) - (b.quantity || 0);
+      return a.name.localeCompare(b.name);
+    });
+
     return data;
-  }, [products, searchTerm, activeTab, sellItems]);
+  }, [products, searchTerm, activeTab, sellItems, sortBy]);
+
+  const visibleProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
+  const hasMoreProducts = visibleCount < filteredProducts.length;
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, activeTab, sortBy, viewMode]);
+
+  useEffect(() => {
+    if (!hasMoreProducts) return;
+
+    const currentTarget = loadMoreRef.current;
+    if (!currentTarget) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredProducts.length));
+        }
+      },
+      {
+        root: null,
+        rootMargin: "220px",
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(currentTarget);
+
+    return () => observer.disconnect();
+  }, [filteredProducts.length, hasMoreProducts]);
+
+  const getThumbUrl = (picturePath) => {
+    if (!picturePath) return "";
+    const separator = picturePath.includes("?") ? "&" : "?";
+    return `${imageBaseUrl}${picturePath}${separator}w=140&h=140&fit=cover`;
+  };
 
   const totalSelectedItems = Object.keys(sellItems).length;
   const totalSelectedQty = Object.values(sellItems).reduce((a, b) => a + b, 0);
@@ -109,12 +160,16 @@ export default function SellProduct() {
     setMessage("");
 
     try {
+      const res = await axios.post(`${BASE_URL}/products/challanNo`);
+      const challanNo = res.data.challan_no;
+      setChallanNumber(challanNo);
       for (const id in sellItems) {
         const qty = sellItems[id];
         const fd = new FormData();
         fd.append("quantity", qty);
         fd.append("action", "sell");
         fd.append("uc", uc);
+        fd.append("challan_no", challanNo);
 
         await axios.post(`${BASE_URL}/products/update/${id}`, fd);
       }
@@ -175,6 +230,10 @@ export default function SellProduct() {
     }
   };
 
+  const totalSoldQty = useMemo(() => {
+    return Object.values(printData).reduce((sum, qty) => sum + qty, 0);
+  }, [printData]);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-40">
 
@@ -228,29 +287,41 @@ export default function SellProduct() {
         </div>
 
         {/* Search Bar */}
-        <div className="relative mb-3">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            className="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+        <div className="flex items-center gap-2 mb-3">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </button>
-          )}
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="py-2 px-3 border border-gray-200 rounded-xl bg-gray-100 text-sm text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500"
+            aria-label="Sort products"
+          >
+            <option value="az">A-Z</option>
+            <option value="highToLow">High to Low</option>
+            <option value="lowToHigh">Low to High</option>
+          </select>
         </div>
 
         {/* Tabs */}
@@ -298,7 +369,7 @@ export default function SellProduct() {
           </div>
         ) : (
           <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
-            {filteredProducts.map((p) => {
+            {visibleProducts.map((p) => {
               const qty = sellItems[p.id] || 0;
               const isSelected = qty > 0;
               const isNearMax = qty >= p.quantity * 0.8;
@@ -317,16 +388,20 @@ export default function SellProduct() {
                     <div className="p-3">
                       <div className="flex items-center gap-3 mb-2">
                         {/* Image */}
-                        <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
+                        <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
                           {p.picture ? (
                             <img
-                              src={`${imageBaseUrl}${p.picture}`}
+                              src={getThumbUrl(p.picture)}
                               alt={p.name}
                               className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                              width="48"
+                              height="48"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">
-                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                             </div>
@@ -455,16 +530,20 @@ export default function SellProduct() {
                   `}
                 >
                   {/* Image */}
-                  <div className="aspect-square w-full overflow-hidden bg-gray-200">
+                  <div className="h-28 w-full overflow-hidden bg-gray-200">
                     {p.picture ? (
                       <img
-                        src={`${imageBaseUrl}${p.picture}`}
+                        src={getThumbUrl(p.picture)}
                         alt={p.name}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                        width="140"
+                        height="140"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
@@ -578,6 +657,18 @@ export default function SellProduct() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {hasMoreProducts && (
+          <div ref={loadMoreRef} className="py-4 text-center text-sm text-gray-500">
+            Loading more products...
+          </div>
+        )}
+
+        {!hasMoreProducts && filteredProducts.length > PAGE_SIZE && (
+          <div className="py-3 text-center text-xs text-gray-400">
+            All products loaded
           </div>
         )}
       </div>
@@ -706,31 +797,132 @@ export default function SellProduct() {
       </div>
 
       {/* Print Area */}
-      <div id="print-area" className="hidden print:block">
-        <div className="p-8">
-          <h2 className="text-2xl font-bold mb-4">Sell Receipt</h2>
-          <table className="w-full border-collapse text-left">
+      <div
+        id="print-area"
+        className="hidden print:block text-[14px] print:text-[16px] leading-tight m-0 p-0"
+      >
+        <div>
+
+          {/* Header */}
+          <div className="text-center">
+            <p className="font-bold text-[16px] print:text-[18px] border-b border-dashed border-black pb-2">
+              Shree Ganeshay Namah
+            </p>
+
+            <p className="font-bold text-[18px] print:text-[20px] pt-1">
+              CLOTH STORE (G)
+            </p>
+
+            <p className="border-b border-dashed border-black pb-1 pt-1 text-[11px] print:text-[13px]">
+              [ ] Original For Receipient &nbsp;&nbsp; [ ] Duplicate For Transporter &nbsp;&nbsp; [ ] Triplicate For Supplier
+            </p>
+
+            <p className="font-bold text-[18px] print:text-[20px] pt-1">
+              PACKING SLIP ONLY
+            </p>
+          </div>
+
+          {/* Customer + Bill Info */}
+          <div className="flex justify-between mt-1">
+            <div className="text-[14px] print:text-[16px]">
+              <p>
+                CHALLAN NO.: <b>{ challanNumber }</b>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-[auto_1fr] gap-x-2 text-right text-[14px] print:text-[16px]">
+              <span>DATE:</span>
+              <b>{new Date().toLocaleDateString('en-IN')}</b>
+
+              <span>TIME:</span>
+              <b>
+                {new Date().toLocaleTimeString('en-IN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </b>
+            </div>
+          </div>
+
+          {/* Table */}
+          <table className="w-full mt-2 border-t border-dashed border-black">
             <thead>
-              <tr className="border-b-2 border-gray-800">
-                <th className="py-2">Product</th>
-                <th className="py-2 text-right">Qty</th>
+              <tr className="border-b border-dashed border-black">
+                <th className="text-left py-1 text-[15px] print:text-[17px] font-semibold">
+                  HSN / Description
+                </th>
+                <th className="text-right py-1 text-[15px] print:text-[17px] font-semibold">
+                  Pcs
+                </th>
+                <th>
+
+                </th>
               </tr>
             </thead>
+
             <tbody>
               {Object.keys(printData).map((id) => {
                 const product = products.find((x) => x.id == id);
                 return (
-                  <tr key={id} className="border-b border-gray-200">
-                    <td className="py-2">{product?.name}</td>
-                    <td className="py-2 text-right">{printData[id]}</td>
+                  <tr key={id} className="border-b border-dashed border-gray-300">
+                    <td className="py-1 text-[14px] print:text-[16px]">
+                      {product?.name}
+                    </td>
+                    <td className="py-1 text-right text-[14px] print:text-[16px]">
+                      {printData[id]}
+                    </td>
+                    <td className="py-1 text-center text-[14px] print:text-[16px]">
+                      <span className="inline-block w-7 h-4 border border-black rounded-sm"></span>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
+            <tr className="border-b border-dashed border-black">
+                <th className="text-center py-1 text-[15px] print:text-[17px] font-bold">
+                  Net Total.....
+                </th>
+                <th className="text-right py-1 text-[15px] print:text-[17px] font-bold">
+                  {totalSoldQty}
+                </th>
+                <th>
+                  <span className="inline-block w-7 h-4 border border-black rounded-sm"></span>
+                </th>
+              </tr>
           </table>
-          <p className="mt-8 text-sm text-gray-500">Date: {new Date().toLocaleString()}</p>
+          
+          {/* Footer Row: Thanks (Left) + Signature (Right) */}
+          {/*<div className="mt-6 flex justify-between items-end">
+            <p className="text-[12px] print:text-[14px] font-semibold">
+              !!! Thanks !!! Visit Again !!!
+            </p>
+
+            <div className="w-56 text-right">
+              <div className="border-t border-dashed border-black text-center text-[14px] print:text-[16px]">
+                Signature
+              </div>
+            </div>
+          </div>*/}
+
+          <p className="text-left mt-5 text-[12px] print:text-[14px] font-semibold print:break-inside-avoid">
+            !!! Thanks !!! Visit Again !!!
+          </p>
+
+          {/* Signature */}
+          <div className="mt-2 flex justify-end">
+            <div className="w-56 text-right">
+              <div className="border-t border-dashed border-black pt-2 text-center text-[14px] print:text-[16px]">
+                Signature
+              </div>
+            </div>
+          </div>
+
+          
+
         </div>
       </div>
+
 
     </div>
   );

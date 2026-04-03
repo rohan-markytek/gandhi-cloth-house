@@ -19,7 +19,11 @@ export default function AddOrBuyProduct() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [addStockQty, setAddStockQty] = useState("");
-  const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
+  const [viewMode, setViewMode] = useState("grid"); // 'list' or 'grid'
+  const [sortBy, setSortBy] = useState("az"); // 'az' | 'highToLow' | 'lowToHigh'
+  const PAGE_SIZE = 10;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loadMoreRef = useRef(null);
 
   // Add Mode State
   const [newName, setNewName] = useState("");
@@ -49,14 +53,61 @@ export default function AddOrBuyProduct() {
 
   // Filter Products for Buy Mode
   const filteredProducts = useMemo(() => {
-    if (!searchTerm) return products;
     const lower = searchTerm.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(lower));
-  }, [products, searchTerm]);
+    const result = products.filter((p) => p.name.toLowerCase().includes(lower));
+
+    result.sort((a, b) => {
+      if (sortBy === "highToLow") return (b.quantity || 0) - (a.quantity || 0);
+      if (sortBy === "lowToHigh") return (a.quantity || 0) - (b.quantity || 0);
+      return a.name.localeCompare(b.name);
+    });
+
+    return result;
+  }, [products, searchTerm, sortBy]);
+
+  const visibleProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
+  const hasMoreProducts = mode === "buy" && !selectedProductId && visibleCount < filteredProducts.length;
 
   const selectedProduct = useMemo(() =>
     products.find(p => p.id === selectedProductId),
     [products, selectedProductId]);
+
+  const getThumbUrl = (picturePath) => {
+    if (!picturePath) return "";
+    const separator = picturePath.includes("?") ? "&" : "?";
+    return `${imageBaseUrl}${picturePath}${separator}w=140&h=140&fit=cover`;
+  };
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, sortBy, viewMode, mode, selectedProductId]);
+
+  useEffect(() => {
+    if (!hasMoreProducts) return;
+
+    const currentTarget = loadMoreRef.current;
+    if (!currentTarget) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredProducts.length));
+        }
+      },
+      {
+        root: null,
+        rootMargin: "220px",
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(currentTarget);
+
+    return () => observer.disconnect();
+  }, [filteredProducts.length, hasMoreProducts]);
 
   // Handlers
   const handleImageChange = (e) => {
@@ -125,16 +176,20 @@ export default function AddOrBuyProduct() {
       >
         <div className="p-3 flex items-center gap-3">
           {/* Image */}
-          <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
+          <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
             {p.picture ? (
               <img
-                src={`${imageBaseUrl}${p.picture}`}
+                src={getThumbUrl(p.picture)}
                 alt={p.name}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+                width="48"
+                height="48"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -167,16 +222,20 @@ export default function AddOrBuyProduct() {
         className="relative overflow-hidden rounded-2xl border transition-all duration-200 shadow-sm hover:shadow-md bg-white border-gray-100 cursor-pointer active:scale-[0.98]"
       >
         {/* Image */}
-        <div className="aspect-square w-full overflow-hidden bg-gray-200">
+        <div className="h-28 w-full overflow-hidden bg-gray-200">
           {p.picture ? (
             <img
-              src={`${imageBaseUrl}${p.picture}`}
+              src={getThumbUrl(p.picture)}
               alt={p.name}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              decoding="async"
+              width="140"
+              height="140"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
@@ -247,13 +306,13 @@ export default function AddOrBuyProduct() {
 
         {/* Tabs */}
         <div className="flex p-1 bg-gray-100 rounded-xl">
-          <button
+          {/*<button
             onClick={() => { setMode("buy"); setMessage(""); setSelectedProductId(null); }}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "buy" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"
               }`}
           >
             Add Stock
-          </button>
+          </button>*/}
           {/*<button
             onClick={() => { setMode("add"); setMessage(""); }}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "add" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"
@@ -261,6 +320,43 @@ export default function AddOrBuyProduct() {
           >
             New Product
           </button>*/}
+          {/* Search Bar */}
+          <div className="flex items-center gap-2 w-full">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+                placeholder="Search product to add stock..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="py-2 px-3 border border-gray-200 rounded-xl bg-gray-100 text-sm text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500"
+              aria-label="Sort products"
+            >
+              <option value="az">A-Z</option>
+              <option value="highToLow">High to Low</option>
+              <option value="lowToHigh">Low to High</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -280,31 +376,6 @@ export default function AddOrBuyProduct() {
             {/* 1. Select Product */}
             {!selectedProduct ? (
               <div className="space-y-4">
-                {/* Search Bar */}
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    className="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out"
-                    placeholder="Search product to add stock..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm("")}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                      <svg className="h-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
 
                 {/* Product List/Grid */}
                 {filteredProducts.length === 0 ? (
@@ -324,9 +395,21 @@ export default function AddOrBuyProduct() {
                   </div>
                 ) : (
                   <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
-                    {filteredProducts.map((p) =>
+                    {visibleProducts.map((p) =>
                       viewMode === "grid" ? renderGridView(p) : renderListView(p)
                     )}
+                  </div>
+                )}
+
+                {hasMoreProducts && (
+                  <div ref={loadMoreRef} className="py-4 text-center text-sm text-gray-500">
+                    Loading more products...
+                  </div>
+                )}
+
+                {!hasMoreProducts && filteredProducts.length > PAGE_SIZE && (
+                  <div className="py-3 text-center text-xs text-gray-400">
+                    All products loaded
                   </div>
                 )}
               </div>
