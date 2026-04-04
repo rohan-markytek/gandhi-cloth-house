@@ -20,6 +20,8 @@ export default function SellCart() {
 
   const trackRef = useRef(null);
   const btnRef = useRef(null);
+  const saleInProgressRef = useRef(false);
+  const printTriggeredRef = useRef(false);
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startXRef = useRef(0);
@@ -82,13 +84,27 @@ export default function SellCart() {
   }, [products]);
 
   const cartRows = useMemo(() => {
-    return Object.entries(cart)
-      .map(([id, qty]) => {
-        const product = products.find((p) => String(p.id) === String(id));
-        if (!product) return null;
-        return { id, qty, product };
-      })
-      .filter(Boolean);
+    const grouped = {};
+
+    Object.entries(cart).forEach(([id, qty]) => {
+      const product = products.find((p) => String(p.id) === String(id));
+      if (!product) return;
+
+      const normalizedId = String(product.id);
+      const parsedQty = Number.parseInt(qty, 10) || 0;
+      if (!parsedQty) return;
+
+      if (!grouped[normalizedId]) {
+        grouped[normalizedId] = { id: normalizedId, qty: 0, product };
+      }
+
+      grouped[normalizedId].qty += parsedQty;
+    });
+
+    return Object.values(grouped).map((row) => ({
+      ...row,
+      qty: Math.min(row.qty, row.product.quantity),
+    }));
   }, [cart, products]);
 
   const totalSelectedItems = cartRows.length;
@@ -136,11 +152,13 @@ export default function SellCart() {
   };
 
   const sellAll = async () => {
+    if (saleInProgressRef.current) return;
     if (!totalSelectedItems) {
       setMessage("No items in cart.");
       return;
     }
 
+    saleInProgressRef.current = true;
     setLoading(true);
     setMessage("");
 
@@ -160,7 +178,7 @@ export default function SellCart() {
       }
 
       const soldData = cartRows.reduce((acc, row) => {
-        acc[row.id] = row.qty;
+        acc[row.id] = (acc[row.id] || 0) + row.qty;
         return acc;
       }, {});
 
@@ -171,19 +189,25 @@ export default function SellCart() {
 
       setMessage("Sale completed. Print dialog opened so you can save as PDF.");
 
-      setTimeout(() => {
-        window.onafterprint = () => {
-          window.onafterprint = null;
-          navigate(`/sell?uc=${uc}`);
-        };
-        window.print();
-      }, 400);
+      if (!printTriggeredRef.current) {
+        printTriggeredRef.current = true;
+        setTimeout(() => {
+          window.onafterprint = () => {
+            window.onafterprint = null;
+            printTriggeredRef.current = false;
+            navigate(`/sell?uc=${uc}`);
+          };
+          window.print();
+        }, 400);
+      }
     } catch (error) {
       console.error(error);
       setMessage("Failed to complete sale.");
+      printTriggeredRef.current = false;
+    } finally {
+      setLoading(false);
+      saleInProgressRef.current = false;
     }
-
-    setLoading(false);
   };
 
   const handleTouchEnd = () => {
@@ -217,6 +241,7 @@ export default function SellCart() {
 
   return (
     <div className="bg-gray-50 pb-32">
+      <div id="sell-cart-screen">
       <div className="bg-white shadow-sm sticky top-0 z-30 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -388,19 +413,20 @@ export default function SellCart() {
           </div>
         </div>
       </div>
+      </div>
 
-      <div id="print-area" className="hidden print:block text-[14px] print:text-[16px] leading-tight m-0 p-0">
+      <div id="print-area" className="hidden print:block text-[12px] leading-tight m-0 p-0">
         <div>
           <div className="text-center">
-            <p className="font-bold text-[16px] print:text-[18px] border-b border-dashed border-black pb-2">Shree Ganeshay Namah</p>
-            <p className="font-bold text-[18px] print:text-[20px] pt-1">CLOTH STORE (G)</p>
-            <p className="border-b border-dashed border-black pb-1 pt-1 text-[11px] print:text-[13px]">[ ] Original For Receipient   [ ] Duplicate For Transporter   [ ] Triplicate For Supplier</p>
-            <p className="font-bold text-[18px] print:text-[20px] pt-1">PACKING SLIP ONLY</p>
+            <p className="font-bold text-[14px] border-b border-dashed border-black pb-1">Shree Ganeshay Namah</p>
+            <p className="font-bold text-[16px] pt-0.5">CLOTH STORE (G)</p>
+            <p className="border-b border-dashed border-black pb-1 pt-0.5 text-[10px]">[ ] Original For Receipient   [ ] Duplicate For Transporter   [ ] Triplicate For Supplier</p>
+            <p className="font-bold text-[16px] pt-0.5">PACKING SLIP ONLY</p>
           </div>
 
           <div className="flex justify-between mt-1">
-            <div className="text-[14px] print:text-[16px]">CHALLAN NO.: <b>{challanNumber}</b></div>
-            <div className="grid grid-cols-[auto_1fr] gap-x-2 text-right text-[14px] print:text-[16px]">
+            <div className="text-[12px]">CHALLAN NO.: <b>{challanNumber}</b></div>
+            <div className="grid grid-cols-[auto_1fr] gap-x-2 text-right text-[12px]">
               <span>DATE:</span>
               <b>{new Date().toLocaleDateString("en-IN")}</b>
               <span>TIME:</span>
@@ -411,8 +437,8 @@ export default function SellCart() {
           <table className="w-full mt-2 border-t border-dashed border-black">
             <thead>
               <tr className="border-b border-dashed border-black">
-                <th className="text-left py-1 text-[15px] print:text-[17px] font-semibold">HSN / Description</th>
-                <th className="text-right py-1 text-[15px] print:text-[17px] font-semibold">Pcs</th>
+                <th className="text-left py-1 text-[12px] font-semibold">HSN / Description</th>
+                <th className="text-right py-1 text-[12px] font-semibold">Pcs</th>
                 <th></th>
               </tr>
             </thead>
@@ -421,25 +447,25 @@ export default function SellCart() {
                 const product = products.find((x) => String(x.id) === String(id));
                 return (
                   <tr key={id} className="border-b border-dashed border-gray-300">
-                    <td className="py-1 text-[14px] print:text-[16px]">{product?.name || "-"}</td>
-                    <td className="py-1 text-right text-[14px] print:text-[16px]">{printData[id]}</td>
-                    <td className="py-1 text-center text-[14px] print:text-[16px]"><span className="inline-block w-7 h-4 border border-black rounded-sm"></span></td>
+                    <td className="py-1 text-[11px]">{product?.name || "-"}</td>
+                    <td className="py-1 text-right text-[11px]">{printData[id]}</td>
+                    <td className="py-1 text-center text-[11px]"><span className="inline-block w-6 h-3.5 border border-black rounded-sm"></span></td>
                   </tr>
                 );
               })}
             </tbody>
             <tr className="border-b border-dashed border-black">
-              <th className="text-center py-1 text-[15px] print:text-[17px] font-bold">Net Total.....</th>
-              <th className="text-right py-1 text-[15px] print:text-[17px] font-bold">{totalSoldQty}</th>
-              <th><span className="inline-block w-7 h-4 border border-black rounded-sm"></span></th>
+              <th className="text-center py-1 text-[12px] font-bold">Net Total.....</th>
+              <th className="text-right py-1 text-[12px] font-bold">{totalSoldQty}</th>
+              <th><span className="inline-block w-6 h-3.5 border border-black rounded-sm"></span></th>
             </tr>
           </table>
 
-          <p className="text-left mt-5 text-[12px] print:text-[14px] font-semibold print:break-inside-avoid">!!! Thanks !!! Visit Again !!!</p>
+          <p className="text-left mt-3 text-[11px] font-semibold print:break-inside-avoid">!!! Thanks !!! Visit Again !!!</p>
 
-          <div className="mt-2 flex justify-end">
+          <div className="mt-1.5 flex justify-end">
             <div className="w-56 text-right">
-              <div className="border-t border-dashed border-black pt-2 text-center text-[14px] print:text-[16px]">Signature</div>
+              <div className="border-t border-dashed border-black pt-1 text-center text-[12px]">Signature</div>
             </div>
           </div>
         </div>
