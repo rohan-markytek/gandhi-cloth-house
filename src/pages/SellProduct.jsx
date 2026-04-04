@@ -84,7 +84,7 @@ export default function SellProduct() {
     let data = products;
 
     // 0. Filter out out-of-stock
-    data = data.filter(p => p.quantity > 0);
+    //data = data.filter(p => p.quantity > 0);
 
     // 1. Search
     if (searchTerm.trim()) {
@@ -385,7 +385,7 @@ export default function SellProduct() {
                       ${isSelected ? "bg-blue-50 border-blue-200 shadow-md" : "bg-white border-gray-100 shadow-sm"}
                     `}
                   >
-                    <div className="p-3">
+                    <div className={`p-3 ${p.quantity === 0 ? 'bg-red-100' : ''}`}>
                       <div className="flex items-center gap-3 mb-2">
                         {/* Image */}
                         <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
@@ -414,7 +414,7 @@ export default function SellProduct() {
                             {p.name}
                           </h3>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-sm text-gray-500">Stock: {p.quantity}</p>
+                            <p className="text-sm text-gray-500">Stock: {p.quantity==0 ? <span className="text-red-700">Out of Stock</span> : p.quantity}</p>
                             {isSelected && isNearMax && (
                               <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
                                 Near Max
@@ -551,7 +551,7 @@ export default function SellProduct() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-3">
+                  <div className={`p-3 ${p.quantity == 0 ? 'bg-red-100' : ''}`}>
                     <div className="flex items-center justify-between mb-2">
                       <h3 className={`font-semibold text-sm line-clamp-1 flex-1 ${isSelected ? "text-blue-900" : "text-gray-800"}`}>
                         {p.name}
@@ -574,7 +574,7 @@ export default function SellProduct() {
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                      <span>Stock: {p.quantity}</span>
+                      <span>Stock: {p.quantity==0 ? <span className="text-red-700">Out of Stock</span> : p.quantity}</span>
                       {isSelected && isNearMax && (
                         <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">
                           Near Max
