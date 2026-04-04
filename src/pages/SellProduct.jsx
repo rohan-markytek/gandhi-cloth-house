@@ -484,7 +484,7 @@ export default function SellProduct() {
                         </div>
 
                         {/* Quick Add Buttons */}
-                        <div className="flex gap-1 flex-1">
+                        {/*<div className="flex gap-1 flex-1">
                           {[1, 5, 10].map((amount) => (
                             <button
                               key={amount}
@@ -503,7 +503,7 @@ export default function SellProduct() {
                               +{amount}
                             </button>
                           ))}
-                        </div>
+                        </div>*/}
                       </div>
                     </div>
 
@@ -623,7 +623,7 @@ export default function SellProduct() {
                     </div>
 
                     {/* Quick Add Buttons */}
-                    <div className="grid grid-cols-3 gap-1">
+                    {/*<div className="grid grid-cols-3 gap-1">
                       {[1, 5, 10].map((amount) => (
                         <button
                           key={amount}
@@ -642,7 +642,7 @@ export default function SellProduct() {
                           +{amount}
                         </button>
                       ))}
-                    </div>
+                    </div>*/}
                   </div>
 
                   {/* Progress bar */}
