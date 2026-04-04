@@ -228,7 +228,11 @@ export default function SellProduct() {
                     </div>
 
                     {!outOfStock && (
-                      <div className="flex items-center gap-1 bg-white rounded-lg p-1 border border-gray-200">
+                      <div
+                        className={`flex items-center gap-1 bg-white rounded-lg p-1 border border-gray-200 ${
+                          viewMode === "grid" ? "w-full justify-between" : "shrink-0 ml-auto"
+                        }`}
+                      >
                         <button
                           onClick={() => updateQuantity(p.id, qty - 1, p.quantity)}
                           className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-md"
@@ -244,7 +248,9 @@ export default function SellProduct() {
                           value={qty || ""}
                           placeholder="0"
                           onChange={(e) => updateQuantity(p.id, e.target.value, p.quantity)}
-                          className="w-12 text-center font-bold bg-transparent focus:outline-none"
+                          className={`text-center font-bold bg-transparent focus:outline-none ${
+                            viewMode === "grid" ? "w-14" : "w-12"
+                          }`}
                         />
 
                         <button
