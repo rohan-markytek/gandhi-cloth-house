@@ -12,6 +12,8 @@ export default function SellProduct() {
 
   const [uc, setUc] = useState("");
   const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(20);
   const [sellItems, setSellItems] = useState(() => getSellCart());
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -35,6 +37,8 @@ export default function SellProduct() {
     } catch (error) {
       console.error(error);
       setMessage("Failed to load products.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,6 +49,10 @@ export default function SellProduct() {
   useEffect(() => {
     setSellCart(sellItems);
   }, [sellItems]);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [searchTerm, activeTab, sortBy]);
 
   const updateQuantity = (id, newQty, stock) => {
     const nextQty = Math.max(0, Math.min(Number.parseInt(newQty || 0, 10), stock));
@@ -195,11 +203,26 @@ export default function SellProduct() {
       )}
 
       <div className="p-4">
-        {filteredProducts.length === 0 ? (
+        {isLoading ? (
+          <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-gray-100 shadow-sm bg-white overflow-hidden animate-pulse">
+                <div className={`p-3 ${viewMode === "grid" ? "space-y-2" : "flex items-center gap-3"}`}>
+                  <div className={`${viewMode === "grid" ? "w-full h-28" : "w-12 h-12"} bg-gray-200 rounded-lg flex-shrink-0`} />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-xl shadow-sm text-gray-500">No products found.</div>
         ) : (
+          <>
           <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
-            {filteredProducts.map((p) => {
+            {filteredProducts.slice(0, visibleCount).map((p) => {
               const qty = sellItems[p.id] || 0;
               const outOfStock = Number(p.quantity) === 0;
 
@@ -269,6 +292,15 @@ export default function SellProduct() {
               );
             })}
           </div>
+          {visibleCount < filteredProducts.length && (
+            <button
+              onClick={() => setVisibleCount((n) => n + 20)}
+              className="w-full mt-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 transition"
+            >
+              Load More ({filteredProducts.length - visibleCount} remaining)
+            </button>
+          )}
+          </>
         )}
       </div>
 
