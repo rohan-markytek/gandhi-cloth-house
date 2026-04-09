@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { jsPDF } from "jspdf";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { clearSellCart, getSellCart, setSellCart } from "../utils/sellCart";
 
@@ -15,13 +16,12 @@ export default function SellCart() {
   const [cart, setCart] = useState(() => getSellCart());
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [challanNumber, setChallanNumber] = useState("");
-  const [printData, setPrintData] = useState({});
+  const [receiptInfo, setReceiptInfo] = useState(null);
 
   const trackRef = useRef(null);
   const btnRef = useRef(null);
   const saleInProgressRef = useRef(false);
-  const printTriggeredRef = useRef(false);
+  const receiptUrlRef = useRef("");
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startXRef = useRef(0);
@@ -42,6 +42,14 @@ export default function SellCart() {
   useEffect(() => {
     setSellCart(cart);
   }, [cart]);
+
+  useEffect(() => {
+    return () => {
+      if (receiptUrlRef.current) {
+        URL.revokeObjectURL(receiptUrlRef.current);
+      }
+    };
+  }, []);
 
   const loadProducts = async () => {
     try {
@@ -151,6 +159,140 @@ export default function SellCart() {
     setDragX(nextX);
   };
 
+  const updateReceiptInfo = (nextReceiptInfo) => {
+    if (receiptUrlRef.current) {
+      URL.revokeObjectURL(receiptUrlRef.current);
+    }
+
+    receiptUrlRef.current = nextReceiptInfo?.url || "";
+    setReceiptInfo(nextReceiptInfo);
+  };
+
+  const createSaleReceiptPdf = ({ challanNo, soldRows }) => {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a5",
+      compress: true,
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 6;
+    const contentWidth = pageWidth - margin * 2;
+    const descWidth = contentWidth - 36;
+    const qtyX = pageWidth - margin - 14;
+    const boxX = pageWidth - margin - 6;
+    const now = new Date();
+    let y = 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("Shree Ganeshay Namah", pageWidth / 2, y, { align: "center" });
+    y += 6;
+
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 6;
+
+    doc.setFontSize(15);
+    doc.text("CLOTH STORE (G)", pageWidth / 2, y, { align: "center" });
+    y += 6;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text("[ ] Original For Recipient   [ ] Duplicate For Transporter   [ ] Triplicate For Supplier", pageWidth / 2, y, { align: "center" });
+    y += 7;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("PACKING SLIP ONLY", pageWidth / 2, y, { align: "center" });
+    y += 8;
+
+    doc.setFontSize(11);
+    doc.text(`CHALLAN NO.: ${challanNo}`, margin, y);
+    doc.text(`DATE: ${now.toLocaleDateString("en-IN")}`, pageWidth - margin, y, { align: "right" });
+    y += 5;
+    doc.text(`TIME: ${now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}`, pageWidth - margin, y, { align: "right" });
+    y += 4;
+
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 4;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("HSN / Description", margin + 1, y);
+    doc.text("Pcs", qtyX, y, { align: "right" });
+    y += 2;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 2;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    soldRows.forEach((row) => {
+      const wrappedName = doc.splitTextToSize(row.name || "-", descWidth);
+      const rowHeight = Math.max(6, wrappedName.length * 4);
+
+      if (y + rowHeight + 18 > pageHeight) {
+        doc.addPage("a5", "landscape");
+        y = 12;
+      }
+
+      doc.text(wrappedName, margin + 1, y + 3);
+      doc.text(String(row.qty), qtyX, y + 3, { align: "right" });
+      doc.roundedRect(boxX - 4, y + 0.2, 5, 3.8, 0.4, 0.4);
+      y += rowHeight;
+      doc.setDrawColor(180);
+      doc.line(margin, y, pageWidth - margin, y);
+      doc.setDrawColor(0);
+      y += 2;
+    });
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Net Total.....", pageWidth - margin - 28, y + 2, { align: "right" });
+    doc.text(String(soldRows.reduce((sum, row) => sum + row.qty, 0)), qtyX, y + 2, { align: "right" });
+    doc.roundedRect(boxX - 4, y - 0.8, 5, 3.8, 0.4, 0.4);
+
+    y += 10;
+    doc.text("!!! Thanks !!! Visit Again !!!", margin, y);
+
+    y += 10;
+    doc.line(pageWidth - 58, y, pageWidth - margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text("Signature", pageWidth - 32, y + 4, { align: "center" });
+
+    const filename = `sale-receipt-${challanNo}.pdf`;
+    const blob = doc.output("blob");
+
+    return {
+      url: URL.createObjectURL(blob),
+      filename,
+      challanNo,
+    };
+  };
+
+  const openReceiptPdf = (nextReceiptInfo = receiptInfo) => {
+    if (!nextReceiptInfo?.url) return;
+
+    const link = document.createElement("a");
+    link.href = nextReceiptInfo.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const downloadReceiptPdf = () => {
+    if (!receiptInfo?.url) return;
+
+    const link = document.createElement("a");
+    link.href = receiptInfo.url;
+    link.download = receiptInfo.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
   const sellAll = async () => {
     if (saleInProgressRef.current) return;
     if (!totalSelectedItems) {
@@ -165,7 +307,11 @@ export default function SellCart() {
     try {
       const challanRes = await axios.post(`${BASE_URL}/products/challanNo`);
       const challanNo = challanRes.data.challan_no;
-      setChallanNumber(challanNo);
+      const soldRows = cartRows.map((row) => ({
+        id: row.id,
+        name: row.product.name,
+        qty: row.qty,
+      }));
 
       for (const row of cartRows) {
         const fd = new FormData();
@@ -177,33 +323,17 @@ export default function SellCart() {
         await axios.post(`${BASE_URL}/products/update/${row.id}`, fd);
       }
 
-      const soldData = cartRows.reduce((acc, row) => {
-        acc[row.id] = (acc[row.id] || 0) + row.qty;
-        return acc;
-      }, {});
-
-      setPrintData(soldData);
       setCart({});
       clearSellCart();
       await loadProducts();
 
-      setMessage("Sale completed. Print dialog opened so you can save as PDF.");
-
-      if (!printTriggeredRef.current) {
-        printTriggeredRef.current = true;
-        setTimeout(() => {
-          window.onafterprint = () => {
-            window.onafterprint = null;
-            printTriggeredRef.current = false;
-            navigate(`/sell?uc=${uc}`);
-          };
-          window.print();
-        }, 400);
-      }
+      const nextReceiptInfo = createSaleReceiptPdf({ challanNo, soldRows });
+      updateReceiptInfo(nextReceiptInfo);
+      setMessage("Sale completed. Receipt PDF is ready.");
+      setTimeout(() => openReceiptPdf(nextReceiptInfo), 150);
     } catch (error) {
       console.error(error);
       setMessage("Failed to complete sale.");
-      printTriggeredRef.current = false;
     } finally {
       setLoading(false);
       saleInProgressRef.current = false;
@@ -226,10 +356,6 @@ export default function SellCart() {
 
     setDragX(0);
   };
-
-  const totalSoldQty = useMemo(() => {
-    return Object.values(printData).reduce((sum, qty) => sum + qty, 0);
-  }, [printData]);
 
   const getThumbUrl = (picturePath) => {
     if (!picturePath) return "";
@@ -267,6 +393,38 @@ export default function SellCart() {
       {message && (
         <div className="mx-4 mt-4 p-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium animate-fade-in">
           {message}
+        </div>
+      )}
+
+      {receiptInfo && (
+        <div className="mx-4 mt-4 rounded-2xl border border-green-100 bg-green-50 p-4 shadow-sm animate-fade-in">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-green-800">Sale receipt ready</p>
+              <p className="mt-1 text-xs text-green-700">Challan No.: {receiptInfo.challanNo}</p>
+            </div>
+            <button
+              onClick={() => navigate(`/sell?uc=${uc}`)}
+              className="rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-medium text-green-800"
+            >
+              Back to Sell
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={() => openReceiptPdf()}
+              className="flex-1 rounded-xl bg-green-700 px-4 py-3 text-sm font-semibold text-white"
+            >
+              Open PDF
+            </button>
+            <button
+              onClick={downloadReceiptPdf}
+              className="flex-1 rounded-xl border border-green-200 bg-white px-4 py-3 text-sm font-semibold text-green-800"
+            >
+              Download PDF
+            </button>
+          </div>
         </div>
       )}
 
@@ -413,62 +571,6 @@ export default function SellCart() {
           </div>
         </div>
       </div>
-      </div>
-
-      <div id="print-area" className="hidden print:block text-[12px] leading-tight m-0 p-0">
-        <div>
-          <div className="text-center">
-            <p className="font-bold text-[14px] border-b border-dashed border-black pb-1">Shree Ganeshay Namah</p>
-            <p className="font-bold text-[16px] pt-0.5">CLOTH STORE (G)</p>
-            <p className="border-b border-dashed border-black pb-1 pt-0.5 text-[10px]">[ ] Original For Receipient   [ ] Duplicate For Transporter   [ ] Triplicate For Supplier</p>
-            <p className="font-bold text-[16px] pt-0.5">PACKING SLIP ONLY</p>
-          </div>
-
-          <div className="flex justify-between mt-1">
-            <div className="text-[12px]">CHALLAN NO.: <b>{challanNumber}</b></div>
-            <div className="grid grid-cols-[auto_1fr] gap-x-2 text-right text-[12px]">
-              <span>DATE:</span>
-              <b>{new Date().toLocaleDateString("en-IN")}</b>
-              <span>TIME:</span>
-              <b>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</b>
-            </div>
-          </div>
-
-          <table className="w-full mt-2 border-t border-dashed border-black">
-            <thead>
-              <tr className="border-b border-dashed border-black">
-                <th className="text-left py-1 text-[12px] font-semibold">HSN / Description</th>
-                <th className="text-right py-1 text-[12px] font-semibold">Pcs</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(printData).map((id) => {
-                const product = products.find((x) => String(x.id) === String(id));
-                return (
-                  <tr key={id} className="border-b border-dashed border-gray-300">
-                    <td className="py-1 text-[11px]">{product?.name || "-"}</td>
-                    <td className="py-1 text-right text-[11px]">{printData[id]}</td>
-                    <td className="py-1 text-center text-[11px]"><span className="inline-block w-6 h-3.5 border border-black rounded-sm"></span></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tr className="border-b border-dashed border-black">
-              <th className="text-center py-1 text-[12px] font-bold">Net Total.....</th>
-              <th className="text-right py-1 text-[12px] font-bold">{totalSoldQty}</th>
-              <th><span className="inline-block w-6 h-3.5 border border-black rounded-sm"></span></th>
-            </tr>
-          </table>
-
-          <p className="text-left mt-3 text-[11px] font-semibold print:break-inside-avoid">!!! Thanks !!! Visit Again !!!</p>
-
-          <div className="mt-1.5 flex justify-end">
-            <div className="w-56 text-right">
-              <div className="border-t border-dashed border-black pt-1 text-center text-[12px]">Signature</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
