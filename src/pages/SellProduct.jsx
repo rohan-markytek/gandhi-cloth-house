@@ -22,11 +22,20 @@ export default function SellProduct() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const code = searchParams.get("uc");
+    let code = searchParams.get("uc");
+    
+    // If no code in URL, try localStorage
+    if (!code || code.trim() === "" || code === "null") {
+      code = localStorage.getItem("userCode");
+    }
+    
     if (!code || code.trim() === "" || code === "null") {
       navigate("/404");
       return;
     }
+    
+    // Save to localStorage for page refreshes
+    localStorage.setItem("userCode", code);
     setUc(code);
   }, [searchParams, navigate]);
 
