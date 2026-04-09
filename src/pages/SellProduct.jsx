@@ -72,6 +72,10 @@ export default function SellProduct() {
       result = result.filter((p) => sellItems[p.id] > 0);
     }
 
+    if (activeTab === "outOfStock") {
+      result = result.filter((p) => Number(p.quantity) === 0);
+    }
+
     result.sort((a, b) => {
       if (sortBy === "highToLow") return (b.quantity || 0) - (a.quantity || 0);
       if (sortBy === "lowToHigh") return (a.quantity || 0) - (b.quantity || 0);
@@ -83,6 +87,7 @@ export default function SellProduct() {
 
   const totalSelectedItems = Object.keys(sellItems).length;
   const totalSelectedQty = Object.values(sellItems).reduce((sum, qty) => sum + qty, 0);
+  const outOfStockCount = products.filter((p) => Number(p.quantity) === 0).length;
 
   const goToCart = () => {
     if (!totalSelectedItems) {
@@ -172,7 +177,7 @@ export default function SellProduct() {
           </select>
         </div>
 
-        <div className="flex p-1 bg-gray-100 rounded-lg">
+        <div className="flex p-1 bg-gray-100 rounded-lg gap-0.5">
           <button
             onClick={() => setActiveTab("all")}
             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
@@ -184,6 +189,12 @@ export default function SellProduct() {
             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === "selected" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
           >
             Selected {totalSelectedItems > 0 ? `(${totalSelectedItems})` : ""}
+          </button>
+          <button
+            onClick={() => setActiveTab("outOfStock")}
+            className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === "outOfStock" ? "bg-white shadow text-red-600" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Out of Stock {outOfStockCount > 0 ? `(${outOfStockCount})` : ""}
           </button>
         </div>
       </div>
