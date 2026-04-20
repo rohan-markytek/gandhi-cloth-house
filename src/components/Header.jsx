@@ -1,5 +1,6 @@
 import React, { useEffect,useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { persistUserCode, resolveUserCode } from "../utils/userCode";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -8,12 +9,14 @@ export default function Header() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const code = searchParams.get("uc"); 
-    if (!code || code.trim() === "" || code=='null') {
+    const code = resolveUserCode(searchParams);
+    if (!code) {
       navigate("/404");
       return;
     }
-  }, []);
+
+    persistUserCode(code);
+  }, [searchParams, navigate]);
 
   return (
     <header className="w-full bg-white shadow-md py-4 px-6 flex items-center justify-between fixed top-0 left-0 z-50">

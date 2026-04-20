@@ -1,29 +1,23 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { persistUserCode, resolveUserCode } from "../utils/userCode";
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const user = searchParams.get("uc");
   const [uc, setUc] = useState("");
 
   useEffect(() => {
-      let code = searchParams.get("uc");
-      
-      // If no code in URL, try localStorage
-      if (!code || code.trim() === "" || code=='null') {
-        code = localStorage.getItem("userCode");
-      }
-      
-      if (!code || code.trim() === "" || code=='null') {
+      const code = resolveUserCode(searchParams);
+
+      if (!code) {
         navigate("/404");
         return;
       }
-      
-      // Save to localStorage for page refreshes
-      localStorage.setItem("userCode", code);
-      setUc(code);
-    }, [searchParams]);
+
+      const persistedCode = persistUserCode(code);
+      setUc(persistedCode);
+    }, [searchParams, navigate]);
 
   const menu = [
     {
@@ -69,7 +63,7 @@ export default function Home() {
           {menu.map((item, index) => (
             <div
               key={index}
-              onClick={() => navigate(`${item.route}?uc=${user}`)}
+              onClick={() => navigate(`${item.route}?uc=${uc}`)}
               className={`
                 ${item.color} border rounded-2xl p-6 
                 flex flex-col items-center justify-center gap-3 
