@@ -3,6 +3,7 @@ import axios from "axios";
 import { jsPDF } from "jspdf";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { clearSellCart, getSellCart, setSellCart } from "../utils/sellCart";
+import { persistUserCode, resolveUserCode } from "../utils/userCode";
 
 export default function SellCart() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -27,21 +28,14 @@ export default function SellCart() {
   const startXRef = useRef(0);
 
   useEffect(() => {
-    let code = searchParams.get("uc");
-    
-    // If no code in URL, try localStorage
-    if (!code || code.trim() === "" || code === "null") {
-      code = localStorage.getItem("userCode");
-    }
-    
-    if (!code || code.trim() === "" || code === "null") {
+    const code = resolveUserCode(searchParams);
+
+    if (!code) {
       navigate("/404");
       return;
     }
-    
-    // Save to localStorage for page refreshes
-    localStorage.setItem("userCode", code);
-    setUc(code);
+
+    setUc(persistUserCode(code));
   }, [searchParams, navigate]);
 
   useEffect(() => {

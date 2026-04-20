@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
@@ -9,9 +10,14 @@ import SellCart from "./pages/SellCart";
 import BuyProduct from "./pages/BuyProduct";
 import AddOrBuyProduct from "./pages/AddOrBuyProduct";
 import NotFound from "./pages/NotFound";
+import { repair404HashIfUserCodeExists } from "./utils/userCode";
 
 
 export default function App() {
+  useEffect(() => {
+    repair404HashIfUserCodeExists();
+  }, []);
+
   return (
     <BrowserRouter>
       {/* <Header /> */}

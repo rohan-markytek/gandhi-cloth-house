@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import axios from "axios";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { persistUserCode, resolveUserCode } from "../utils/userCode";
 
 export default function AddOrBuyProduct() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -43,22 +44,15 @@ export default function AddOrBuyProduct() {
 
   useEffect(() => {
     loadProducts();
-    let code = searchParams.get("uc");
-    
-    // If no code in URL, try localStorage
-    if (!code || code.trim() === "" || code=='null') {
-      code = localStorage.getItem("userCode");
-    }
-    
-    if (!code || code.trim() === "" || code=='null') {
+    const code = resolveUserCode(searchParams);
+
+    if (!code) {
       navigate("/404");
       return;
     }
-    
-    // Save to localStorage for page refreshes
-    localStorage.setItem("userCode", code);
-    setUc(code);
-  }, [searchParams]);
+
+    setUc(persistUserCode(code));
+  }, [searchParams, navigate]);
 
   // Filter Products for Buy Mode
   const filteredProducts = useMemo(() => {
