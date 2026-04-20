@@ -13,7 +13,7 @@ export default function SellProduct() {
   const [uc, setUc] = useState("");
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(20);
+  const [visibleCount, setVisibleCount] = useState(50);
   const [sellItems, setSellItems] = useState(() => getSellCart());
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -60,7 +60,7 @@ export default function SellProduct() {
   }, [sellItems]);
 
   useEffect(() => {
-    setVisibleCount(20);
+    setVisibleCount(50);
   }, [searchTerm, activeTab, sortBy]);
 
   const updateQuantity = (id, newQty, stock) => {
@@ -83,6 +83,10 @@ export default function SellProduct() {
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
       result = result.filter((p) => p.name.toLowerCase().includes(lower));
+    }
+
+    if (activeTab === "all") {
+      result = result.filter((p) => Number(p.quantity) > 0);
     }
 
     if (activeTab === "selected") {

@@ -189,9 +189,12 @@ export default function SellCart() {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 6;
     const contentWidth = pageWidth - margin * 2;
-    const descWidth = contentWidth - 36;
-    const qtyX = pageWidth - margin - 14;
-    const boxX = pageWidth - margin - 6;
+    const qtyX = pageWidth - margin - 10;
+    const amountX = qtyX - 22;
+    const rateX = amountX - 24;
+    const meterX = rateX - 20;
+    const descWidth = meterX - margin - 14;
+    const boxX = pageWidth - margin - 2;
     const now = new Date();
     let y = 10;
 
@@ -229,6 +232,9 @@ export default function SellCart() {
 
     doc.setFont("helvetica", "bold");
     doc.text("HSN / Description", margin + 1, y);
+    doc.text("Meter", meterX, y, { align: "right" });
+    doc.text("Rate", rateX, y, { align: "right" });
+    doc.text("Amount", amountX, y, { align: "right" });
     doc.text("Pcs", qtyX, y, { align: "right" });
     y += 2;
     doc.line(margin, y, pageWidth - margin, y);
@@ -247,6 +253,9 @@ export default function SellCart() {
       }
 
       doc.text(wrappedName, margin + 1, y + 3);
+      doc.text("", meterX, y + 3, { align: "right" });
+      doc.text("", rateX, y + 3, { align: "right" });
+      doc.text("", amountX, y + 3, { align: "right" });
       doc.text(String(row.qty), qtyX, y + 3, { align: "right" });
       doc.roundedRect(boxX - 4, y + 0.2, 5, 3.8, 0.4, 0.4);
       y += rowHeight;
@@ -257,7 +266,10 @@ export default function SellCart() {
     });
 
     doc.setFont("helvetica", "bold");
-    doc.text("Net Total.....", pageWidth - margin - 28, y + 2, { align: "right" });
+    doc.text("Net Total.....", meterX - 15, y + 2, { align: "right" });
+    doc.text("", meterX, y + 2, { align: "right" });
+    doc.text("", rateX, y + 2, { align: "right" });
+    doc.text("", amountX, y + 2, { align: "right" });
     doc.text(String(soldRows.reduce((sum, row) => sum + row.qty, 0)), qtyX, y + 2, { align: "right" });
     doc.roundedRect(boxX - 4, y - 0.8, 5, 3.8, 0.4, 0.4);
 
