@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -13,7 +13,7 @@ import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       {/* <Header /> */}
         <main className="min-h-[80vh] pb-16">
           <Routes>
@@ -27,6 +27,6 @@ export default function App() {
           </Routes>
         </main>
       <Footer />
-    </BrowserRouter>
+    </HashRouter>
   );
 }
