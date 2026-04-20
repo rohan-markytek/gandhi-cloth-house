@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
@@ -19,7 +20,7 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       {/* <Header /> */}
         <main className="min-h-[80vh] pb-16">
           <Routes>
@@ -33,6 +34,6 @@ export default function App() {
           </Routes>
         </main>
       <Footer />
-    </BrowserRouter>
+    </HashRouter>
   );
 }
