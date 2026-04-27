@@ -274,7 +274,7 @@ export default function SellProduct() {
                           viewMode === "grid" ? "w-full justify-between" : "shrink-0 ml-auto"
                         }`}
                       >
-                        <button
+                        {/*<button
                           onClick={() => updateQuantity(p.id, qty - 1, p.quantity)}
                           className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-md"
                           disabled={qty === 0}
@@ -282,7 +282,7 @@ export default function SellProduct() {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" />
                           </svg>
-                        </button>
+                        </button>*/}
 
                         <input
                           type="number"
@@ -290,11 +290,11 @@ export default function SellProduct() {
                           placeholder="0"
                           onChange={(e) => updateQuantity(p.id, e.target.value, p.quantity)}
                           className={`text-center font-bold bg-transparent focus:outline-none ${
-                            viewMode === "grid" ? "w-14" : "w-12"
+                            viewMode === "grid" ? "w-full" : "w-20"
                           }`}
                         />
 
-                        <button
+                        {/*<button
                           onClick={() => updateQuantity(p.id, qty + 1, p.quantity)}
                           className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700 rounded-md"
                           disabled={qty >= p.quantity}
@@ -302,7 +302,7 @@ export default function SellProduct() {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                           </svg>
-                        </button>
+                        </button>*/}
                       </div>
                     )}
                   </div>
