@@ -7,6 +7,8 @@ import { persistUserCode, resolveUserCode } from "../utils/userCode";
 export default function SellProduct() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const imageBaseUrl = import.meta.env.VITE_PRODUCT_IMAGE_BASE_URL;
+  const purchaseDateKeys = ["lastPurchaseDate", "last_purchase_date", "purchaseDate", "purchase_date"];
+  const createdDateKeys = ["createdAt", "created_at", "createdDate", "created_date"];
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -116,6 +118,40 @@ export default function SellProduct() {
     if (!picturePath) return "";
     const separator = picturePath.includes("?") ? "&" : "?";
     return `${imageBaseUrl}${picturePath}${separator}w=140&h=140&fit=cover`;
+  };
+
+  const getAgingLabel = (product) => {
+    const dateValue =
+      purchaseDateKeys.find((key) => product[key])
+        ? product[purchaseDateKeys.find((key) => product[key])]
+        : product[createdDateKeys.find((key) => product[key])];
+
+    if (!dateValue) {
+      return null;
+    }
+
+    const sourceDate = new Date(dateValue);
+
+    if (Number.isNaN(sourceDate.getTime())) {
+      return null;
+    }
+
+    const diffMs = Date.now() - sourceDate.getTime();
+    const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+
+    if (diffDays >= 365) {
+      const years = Math.floor(diffDays / 365);
+      const months = Math.floor((diffDays % 365) / 30);
+      return months > 0 ? `${years}y ${months}m` : `${years}y`;
+    }
+
+    if (diffDays >= 30) {
+      const months = Math.floor(diffDays / 30);
+      const days = diffDays % 30;
+      return days > 0 ? `${months}m ${days}d` : `${months}m`;
+    }
+
+    return `${diffDays}d`;
   };
 
   return (
@@ -243,6 +279,7 @@ export default function SellProduct() {
             {filteredProducts.slice(0, visibleCount).map((p) => {
               const qty = sellItems[p.id] || 0;
               const outOfStock = Number(p.quantity) === 0;
+              const agingLabel = getAgingLabel(p);
 
               return (
                 <div
@@ -263,9 +300,12 @@ export default function SellProduct() {
 
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-800 truncate">{p.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        Stock: {outOfStock ? <span className="text-red-600">Out of Stock</span> : p.quantity}
-                      </p>
+                      <div className="flex items-center justify-between gap-2 text-sm text-gray-500">
+                        <p>
+                          Stock: {outOfStock ? <span className="text-red-600">Out of Stock</span> : p.quantity}
+                        </p>
+                        {agingLabel ? <p className="shrink-0">Aging: {agingLabel}</p> : null}
+                      </div>
                     </div>
 
                     {!outOfStock && (
