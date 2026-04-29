@@ -304,7 +304,7 @@ export default function SellProduct() {
                         <p>
                           Stock: {outOfStock ? <span className="text-red-600">Out of Stock</span> : p.quantity}
                         </p>
-                        {agingLabel ? <p className="shrink-0">Aging: {agingLabel}</p> : null}
+                        {agingLabel ? <p className="shrink-0 text-green-600">{agingLabel}</p> : null}
                       </div>
                     </div>
 
