@@ -271,11 +271,12 @@ export default function SellCart() {
     doc.text("!!! Thanks !!! Visit Again !!!", margin, y);
 
     y += 10;
-    doc.line(pageWidth - 58, y, pageWidth - margin, y);
+    doc.line(margin, y, margin + 52, y);
     doc.setFont("helvetica", "normal");
-    doc.text("Signature", pageWidth - 32, y + 4, { align: "center" });
+    doc.text("Signature", margin + 26, y + 4, { align: "center" });
 
-    const filename = `sale-receipt-${challanNo}.pdf`;
+    const normalizedChallanNo = String(challanNo ?? "").trim();
+    const filename = normalizedChallanNo ? `${normalizedChallanNo}.pdf` : "receipt.pdf";
     const blob = doc.output("blob");
 
     return {
@@ -320,8 +321,21 @@ export default function SellCart() {
     setMessage("");
 
     try {
-      const challanRes = await axios.post(`${BASE_URL}/products/challanNo`);
-      const challanNo = challanRes.data.challan_no;
+      const challanRequest = new FormData();
+      challanRequest.append("uc", uc);
+
+      const challanRes = await axios.post(`${BASE_URL}/products/challanNo`, challanRequest);
+      const challanNo =
+        challanRes?.data?.challan_no ||
+        challanRes?.data?.challanNo ||
+        challanRes?.data?.data?.challan_no ||
+        challanRes?.data?.data?.challanNo ||
+        "";
+
+      if (!challanNo) {
+        throw new Error("Challan number was not returned by API.");
+      }
+
       const soldRows = cartRows.map((row) => ({
         id: row.id,
         name: row.product.name,
@@ -334,6 +348,7 @@ export default function SellCart() {
         fd.append("action", "sell");
         fd.append("uc", uc);
         fd.append("challan_no", challanNo);
+        fd.append("challanNo", challanNo);
 
         await axios.post(`${BASE_URL}/products/update/${row.id}`, fd);
       }
@@ -348,7 +363,12 @@ export default function SellCart() {
       setTimeout(() => openReceiptPdf(nextReceiptInfo), 150);
     } catch (error) {
       console.error(error);
-      setMessage("Failed to complete sale.");
+      const apiMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to complete sale.";
+      setMessage(apiMessage);
     } finally {
       setLoading(false);
       saleInProgressRef.current = false;
